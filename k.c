@@ -12,13 +12,23 @@
 #include "line.h"
 #include "window_info.h"
 
+int density = 10;
+
 int main(int argc, char* argv[])
 {
     for(int i=0; i<argc; i++) puts(argv[i]);
 
     // Setup
     SDL_Init(SDL_INIT_VIDEO);
-    wInfo wI = {.x=50, .y=50, .w=600, .h=400, .flags= SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS};
+    wInfo wI;
+    { // Set window location, size, and behavior
+        Uint32 window_flags = SDL_WINDOW_ALWAYS_ON_TOP | SDL_WINDOW_BORDERLESS | SDL_WINDOW_INPUT_GRABBED;
+        wI.x=50; wI.y=50; wI.w=600; wI.h=400; wI.flags=window_flags;
+        if (argc>1) wI.x = atoi(argv[1]);
+        if (argc>2) wI.y = atoi(argv[2]);
+        if (argc>3) wI.w = atoi(argv[3]);
+        if (argc>4) wI.h = atoi(argv[4]);
+    }
     SDL_Window *win = SDL_CreateWindow(argv[0], wI.x, wI.y, wI.w, wI.h, wI.flags);
     SDL_Renderer *ren = SDL_CreateRenderer(win, -1, 0);
     // Check if render targets are supported
@@ -33,6 +43,11 @@ int main(int argc, char* argv[])
     SDL_Texture *texR = tex1;                                           // texR: Pointer to active texture
     enum {TEX1, TEX2} texIndex = TEX1;                                  // texIndex: Index textures by name
 
+    // Program animation
+    enum {MORE_DENSE, LESS_DENSE} direction = MORE_DENSE;               // Lines getting more or less dense
+    bool swap_dir = false;                                              // Swap direction of line density change
+    bool swap_tex = false;                                              // Swap which texture to display
+
     bool quit = false;
     while(quit == false)
     {
@@ -41,25 +56,44 @@ int main(int argc, char* argv[])
         while(  SDL_PollEvent(&e)  )
         { if(e.type == SDL_KEYDOWN) { switch(e.key.keysym.sym) {
             case SDLK_q: quit = true; break;                            // Press q to quit
-            case SDLK_SPACE:                                            // Space toggles textures
-                switch(texIndex)
-                {
-                    case TEX1: texIndex=TEX2; break;
-                    case TEX2: texIndex=TEX1; break;
-                    default: break;
-                }
-                break;
             default: break;
         } /* switch */ } /* if */ } /* while */
 
         // Render
         // Draw something on each texture using Render API
+        // Program animation
+        switch(direction)                                               // Line density is inc or dec
+        { // Animate changing line density
+            case MORE_DENSE: density++; if(density>100) {density=100; swap_dir=true;}                break;
+            case LESS_DENSE: density--; if(density<3)   {density=3;   swap_dir=true; swap_tex=true;} break;
+            default: break;
+        }
+        if(swap_dir==true)                                                  // Growing or shrinking
+        {
+            switch(direction)
+            {
+                case MORE_DENSE: direction=LESS_DENSE; break;
+                case LESS_DENSE: direction=MORE_DENSE; break;
+                default: break;
+            }
+            swap_dir=false;                                             // Reset trigger
+        }
+        if(swap_tex==true)                                              // Orange or blue
+        {
+            switch(texIndex)
+            {
+                case TEX1: texIndex=TEX2; break;
+                case TEX2: texIndex=TEX1; break;
+                default: break;
+            }
+            swap_tex=false;                                             // Reset trigger
+        }
         { // Render to tex1
             SDL_SetRenderTarget(ren, tex1);                             // Render to texture instead of default
             color bgnd = {.r=200, .g=100, .b=100};                      // Set background color
             SDL_SetRenderDrawColor(ren, bgnd.r, bgnd.b, bgnd.g, 255);   // Draw using background color
             SDL_RenderClear(ren);                                       // Clear to background color
-            int N=10;                                                   // Number of lines
+            int N=density;                                              // Number of lines;
             for(int i=0; i<N; i++)
             {
                 int X = (i*wI.w)/N; int Y = (i*wI.h)/N;
@@ -73,7 +107,7 @@ int main(int argc, char* argv[])
             color bgnd = {.r=100, .g=200, .b=100};                      // Set background color
             SDL_SetRenderDrawColor(ren, bgnd.r, bgnd.b, bgnd.g, 255);   // Draw using background color
             SDL_RenderClear(ren);                                       // Clear to background color
-            int N=10;                                                   // Number of lines
+            int N=density;                                                   // Number of lines
             for(int i=0; i<N; i++)
             {
                 int X = (i*wI.w)/N; int Y = (i*wI.h)/N;
