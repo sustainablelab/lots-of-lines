@@ -4,6 +4,8 @@
  * The drawing is done on the texture.
  * Then set rendering back to the default renderer, copy the texture to present,
  * then present renderer to display.
+ *
+ * Make an array of such textures. Index with an enum.
  * *******************************/
 #include <SDL.h>
 #include <stdio.h>
@@ -40,8 +42,8 @@ int main(int argc, char* argv[])
     SDL_Texture *tex1 = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wI.w, wI.h);
     SDL_Texture *tex2 = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wI.w, wI.h);
     // Kick-off pointing to first texture
-    SDL_Texture *texR = tex1;                                           // texR: Pointer to active texture
-    enum {TEX1, TEX2} texIndex = TEX1;                                  // texIndex: Index textures by name
+    SDL_Texture *texR[] = {tex1, tex2};                                 // texR: List of the textures
+    enum {TEX1, TEX2} texIndex = TEX1;                                  // texIndex: Index textures by enum name
 
     // Program animation
     enum {MORE_DENSE, LESS_DENSE} direction = MORE_DENSE;               // Lines getting more or less dense
@@ -116,14 +118,8 @@ int main(int argc, char* argv[])
                 SDL_RenderDrawLine(ren, l.x1, l.y1, l.x2, l.y2);
             }
         }
-        switch(texIndex)                                            // Look up texture to render
-        {
-            case TEX1: texR=tex1; break;
-            case TEX2: texR=tex2; break;
-            default: break;
-        }
         SDL_SetRenderTarget(ren, NULL);                             // Render to default renderer again
-        SDL_RenderCopy(ren, texR, NULL, NULL);                      // Copy texture to default renderer
+        SDL_RenderCopy(ren, texR[texIndex], NULL, NULL);            // Copy texture to default renderer
         SDL_RenderPresent(ren);                                     // Draw to screen
         SDL_Delay(10);                                              // Time between frames
     }
