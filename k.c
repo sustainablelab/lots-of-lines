@@ -34,10 +34,14 @@ int main(int argc, char* argv[])
     SDL_Window *win = SDL_CreateWindow(argv[0], wI.x, wI.y, wI.w, wI.h, wI.flags);
     SDL_Renderer *ren = SDL_CreateRenderer(win, -1, 0);
     // Check if render targets are supported
-    SDL_RendererInfo rI;
-    SDL_GetRendererInfo(ren, &rI);
-    // TODO: replace this with actual error handling
-    printf("Renderer \"%s\" supports rendering to texture: %s\n", rI.name, (rI.flags)&SDL_TEXTUREACCESS_TARGET?"true":"false"); fflush(stdout);
+    if(  !SDL_RenderTargetSupported(ren)  )                             // Cannot render to texture
+    { // Notify user and exit.
+        printf("SDL_RenderTargetSupported: %s\n", SDL_RenderTargetSupported(ren) ? "true":"false");
+        SDL_DestroyRenderer(ren);
+        SDL_DestroyWindow(win);
+        SDL_Quit();
+        return EXIT_FAILURE;
+    }
     // Set up for multiple renduring textures
     SDL_Texture *tex1 = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wI.w, wI.h);
     SDL_Texture *tex2 = SDL_CreateTexture(ren, SDL_PIXELFORMAT_RGBA8888, SDL_TEXTUREACCESS_TARGET, wI.w, wI.h);
