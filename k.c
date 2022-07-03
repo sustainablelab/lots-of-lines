@@ -1,11 +1,15 @@
 /* *************DOC***************
- * Instead of just rendering to the default renderer,
- * Set rendering target to a texture and make rendering calls.
- * The drawing is done on the texture.
- * Then set rendering back to the default renderer, copy the texture to present,
- * then present renderer to display.
+ * Instead of just rendering to the default renderer:
+ * - set rendering target to a texture
+ * - make rendering calls to draw on the texture
+ * - set rendering back to the default renderer
+ * - copy the texture to present
+ * - present renderer to display
  *
- * Make an array of such textures. Index with an enum.
+ * texR[] : an array of textures to render to (pointers to textures)
+ * texIndex : index texR[] with an enum
+ * Example: SDL_RenderCopy(ren, texR[texIndex], NULL, NULL);       // Copy texture to default renderer
+ * Assign texIndex to selecct which texture gets rendered
  * *******************************/
 #include <SDL.h>
 #include <stdio.h>
@@ -62,6 +66,7 @@ int main(int argc, char* argv[])
         while(  SDL_PollEvent(&e)  )
         { if(e.type == SDL_KEYDOWN) { switch(e.key.keysym.sym) {
             case SDLK_q: quit = true; break;                            // Press q to quit
+            case SDLK_SPACE: swap_dir = true; break;                    // Press SPACE to force change
             default: break;
         } /* switch */ } /* if */ } /* while */
 
@@ -103,9 +108,18 @@ int main(int argc, char* argv[])
             for(int i=0; i<N; i++)
             {
                 int X = (i*wI.w)/N; int Y = (i*wI.h)/N;
-                line l = {.x1=0, .y1=0+Y, .x2=0+X, .y2=wI.h, .c={.r=0,.g=20,.b=20}}; // Define line
-                SDL_SetRenderDrawColor(ren, l.c.r, l.c.b, l.c.g, 255);      // Draw using background color
-                SDL_RenderDrawLine(ren,l.x1,l.y1,l.x2,l.y2);                // Draw line
+                { // Lines begin at top left
+                    int X_BEG = 0; int Y_BEG = 0;
+                    line l = {.x1=X_BEG, .y1=Y_BEG+Y, .x2=X_BEG+X, .y2=wI.h, .c={.r=0,.g=20,.b=20}}; // Define line
+                    SDL_SetRenderDrawColor(ren, l.c.r, l.c.b, l.c.g, 255);      // Draw using background color
+                    SDL_RenderDrawLine(ren,l.x1,l.y1,l.x2,l.y2);                // Draw line
+                }
+                { // Lines begin at top center
+                    /* int X_BEG = wI.w/2; int Y_BEG = 0; */
+                    /* line l = {.x1=X_BEG, .y1=Y_BEG+Y, .x2=X_BEG+X, .y2=wI.h, .c={.r=0,.g=20,.b=20}}; // Define line */
+                    /* SDL_SetRenderDrawColor(ren, l.c.r, l.c.b, l.c.g, 255);      // Draw using background color */
+                    /* SDL_RenderDrawLine(ren,l.x1,l.y1,l.x2,l.y2);                // Draw line */
+                }
             }
         }
         { // Render to tex2
